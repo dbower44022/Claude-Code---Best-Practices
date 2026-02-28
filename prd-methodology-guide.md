@@ -2,8 +2,10 @@
 
 ## Using Claude.ai and Claude Code for Large Project Development
 
-**Version:** 2.0
+**Version:** 3.0
 **Purpose:** This guide defines the standard methodology for developing large software projects using Claude.ai for product requirements and design, and Claude Code for implementation. It establishes document types, templates, workflows, and rationale for each decision.
+
+> **V3.0 (2026-02-27):** Added Implementation Guide as a new document type — a 1:1 companion for every PRD/TDD that Claude Code works from (Sections 2.1–2.3, 3.10). Extended the implementation workflow from Plan-Execute-Verify-Test to Plan-Execute-Verify-Test-Document (Section 4.2). Added template file `template-implementation-guide.md`.
 
 > **V2.0 (2026-02-23):** Added Key Processes as a PRD component (Section 3.5, 3.8). Added field-level metadata requirements — Editable, Sortable, Filterable — for Entity Base PRDs (Section 5.6). Expanded TDD methodology to describe the living document approach where Claude Code writes implementation decisions back into TDDs (Sections 3.2, 3.7, 4.4). Added the † caching convention for subquery-backed sortable fields.
 
@@ -50,6 +52,7 @@ These documents describe the entire product and apply globally.
 | Product TDD | Global technology and deployment decisions | Technology stack, database choices, API patterns, design principles, deployment infrastructure, with rationale. The foundation that all entity and action TDDs inherit from. |
 | GUI Standards | Reusable UI patterns and conventions | Design philosophy, color system, typography, spacing, component patterns, layout conventions, interaction behaviors, data display conventions |
 | PRD Index | Document registry and navigation | Hierarchical status of all documents, retired document history, workflow notes |
+| Implementation Guides | What Claude Code actually built for each product-level document | Files created/modified, requirement-to-code mapping, deviations and rationale, edge cases discovered, integration points, technical debt |
 
 ### 2.2 Entity Level
 
@@ -60,6 +63,7 @@ These documents describe a single data entity (Contact, Company, Communication, 
 | Entity Base PRD | Complete description of the entity | Definition, field-level metadata (editable/sortable/filterable), relationships, lifecycle, key processes, action catalog, cross-cutting concerns |
 | Entity UI PRD | Screen layouts and navigation for the entity | Screen descriptions, interaction flows, simple action UI, task lists, test plans |
 | Entity TDD | Entity-specific technical decisions (only if needed) | Decisions with rationale that deviate from or extend the Product TDD. Starts with your architectural decisions; grows as Claude Code adds implementation decisions. |
+| Implementation Guides | What Claude Code actually built for each entity-level document | 1:1 companion for each Entity Base PRD, Entity UI PRD, and Entity TDD. Maps requirements and decisions to codebase reality. |
 
 ### 2.3 Action Level
 
@@ -69,6 +73,7 @@ These documents describe a single complex action or group of related actions on 
 |---|---|---|
 | Action Sub-PRD | Detailed requirements for a complex action | Overview, extracted context, key processes, requirements, UI specs, task lists, test plans |
 | Action TDD | Action-specific technical decisions (only if needed) | Decisions with rationale that apply only to this action. Same living document approach — you write initial decisions, Claude Code adds implementation decisions. |
+| Implementation Guides | What Claude Code actually built for each action-level document | 1:1 companion for each Action Sub-PRD and Action TDD. Maps requirements and decisions to codebase reality. |
 
 ### 2.4 Cross-Entity Workflows
 
@@ -77,6 +82,14 @@ If a workflow genuinely spans multiple entities without a natural owner, it foll
 ### 2.5 Inheritance
 
 Each level inherits from above. An Action Sub-PRD inherits the product principles, the entity's data model and lifecycle, and any technical decisions from the Product TDD and Entity TDD. The self-containment principle means relevant inherited context is extracted into the document rather than requiring Claude Code to load parent documents.
+
+### 2.6 Implementation Guides
+
+Every document that Claude Code works from — every PRD and every TDD — gets a companion Implementation Guide. This is a strict 1:1 mapping: `contact-entity-base-prd.md` gets `contact-entity-base-prd-impl.md`, `contact-entity-tdd.md` gets `contact-entity-tdd-impl.md`, and so on.
+
+**Why this exists:** PRDs define what to build. TDDs capture key technical decisions. But neither tells a future Claude Code session what was actually implemented — which files were created, how requirements mapped to code, what deviations occurred and why, what edge cases were discovered. Without this record, a Claude Code session starting an iteration must reverse-engineer the codebase to understand what's already there. The Implementation Guide eliminates that reverse-engineering step.
+
+**The handoff set:** When directing Claude Code to iterate on a feature, you hand it three documents: the PRD (what we want), the TDD (how we decided to build it), and the Implementation Guide (what was actually built). Together these give Claude Code complete context for the iteration — intent, decisions, and codebase reality.
 
 ---
 
@@ -200,6 +213,40 @@ Action TDDs are optional. They capture technical decisions specific to an action
 
 **TDD hierarchy:** When Claude Code works on an action, it reads the Product TDD (platform defaults), the Entity TDD (entity-specific decisions), and the Action TDD (action-specific decisions), in that order. Each level overrides the one above for its specific scope.
 
+### 3.10 Implementation Guide
+
+**Template file:** `template-implementation-guide.md`
+
+The Implementation Guide is the record of what Claude Code actually built. It is the bridge between requirements (PRDs) and codebase reality — the document that prevents future Claude Code sessions from having to reverse-engineer existing code to understand what's already in place.
+
+**When to create:** Claude Code creates or updates the Implementation Guide during the Document stage of the Plan-Execute-Verify-Test-Document cycle (Section 4.2). The first implementation pass creates the guide; subsequent iterations update it.
+
+**Who writes it:** Claude Code. It is the only actor that knows exactly what was built, which files were touched, and what implementation choices were made. You review and approve it, but Claude Code authors it.
+
+**Key principle:** The Implementation Guide maps requirements to code. It does not repeat the PRD's requirements or the TDD's decisions — it references them and explains how they were realized in the codebase. Someone reading the PRD, TDD, and Implementation Guide together understands intent, technical approach, and codebase reality without reading any source code.
+
+**Naming convention:** The companion guide uses the source document's filename with `-impl` appended before the extension. Examples:
+- `contact-entity-base-prd.md` → `contact-entity-base-prd-impl.md`
+- `contact-entity-tdd.md` → `contact-entity-tdd-impl.md`
+- `contact-merge-split-prd.md` → `contact-merge-split-prd-impl.md`
+- `product-tdd.md` → `product-tdd-impl.md`
+
+**Content scope:** Each Implementation Guide covers:
+
+- **Files and components.** Which files were created or modified, organized by functional area. Not an exhaustive file listing — a meaningful map of where the implementation lives in the codebase.
+- **Requirement-to-code mapping.** How specific PRD requirements or TDD decisions were realized. References task list IDs (e.g., CONT-01) and maps them to the code structures that implement them.
+- **Deviations from requirements.** Where the implementation diverged from the PRD or TDD, and why. This is critical for iterations — if a requirement was modified during implementation, the next Claude Code session needs to know that before re-implementing the original spec.
+- **Edge cases discovered.** Edge cases, boundary conditions, or interaction effects that weren't anticipated in the PRD but were handled in implementation.
+- **Integration points.** How this implementation connects to other entities, services, or shared infrastructure. What it depends on and what depends on it.
+- **Technical debt and known limitations.** Workarounds, performance compromises, incomplete implementations, or areas flagged for future improvement. Includes context on why the debt was accepted (e.g., "deferred pagination optimization pending real usage data").
+
+**Iteration handling:** When Claude Code iterates on a previously implemented feature:
+
+- **Minor changes** (bug fixes, small enhancements, adding a field): Claude Code appends to the existing Implementation Guide with a dated changelog entry describing what changed and why.
+- **Major changes** (significant rework, architectural changes, large new feature areas): Claude Code writes a new comprehensive Implementation Guide reflecting the current state of the implementation, with a changelog section at the top summarizing the evolution from prior versions.
+
+The threshold between minor and major is a judgment call. The guiding question is: would a future Claude Code session be better served by reading the existing guide plus an appendix, or by reading a fresh comprehensive guide? If the accumulated changes make the original guide misleading or hard to follow, it's time for a rewrite.
+
 ---
 
 ## 4. The Implementation Workflow
@@ -210,9 +257,9 @@ Action TDDs are optional. They capture technical decisions specific to an action
 
 **Claude Code** is used for building and verifying. Claude Code reads PRDs and TDDs, plans implementation, writes code, and reports status. Claude Code proposes changes to documents but never modifies them without your approval.
 
-### 4.2 The Plan-Execute-Verify-Test Cycle
+### 4.2 The Plan-Execute-Verify-Test-Document Cycle
 
-When you direct Claude Code to implement a section of a PRD, the workflow follows four stages:
+When you direct Claude Code to implement a section of a PRD, the workflow follows five stages:
 
 **Plan.** Claude Code reads the document section and its task list. It presents a proposed implementation plan, which may include suggested additions or modifications to the task list. You discuss the plan and approve it before any code is written. This is where Claude Code might identify tasks you hadn't thought of or suggest splitting a task that's too large.
 
@@ -222,16 +269,21 @@ When you direct Claude Code to implement a section of a PRD, the workflow follow
 
 **Test.** Claude Code generates a test plan for the completed section. You review and approve the test plan before it's added to the document. Claude Code then runs the tests and reports results.
 
+**Document.** Claude Code writes or updates the Implementation Guide for the document it worked from (Section 3.10). This captures what was actually built — files created, requirement-to-code mapping, deviations from the PRD, edge cases discovered, integration points, and any technical debt introduced. You review and approve the Implementation Guide before the cycle is complete.
+
+The Document stage is not optional. Without it, the next Claude Code session working on this feature starts from a knowledge deficit — it knows what was intended (PRD) and what decisions were made (TDD), but not what actually exists in the codebase. The Implementation Guide closes that gap.
+
 ### 4.3 Session Management
 
 Claude Code does not maintain state between sessions. At the start of each session:
 
 1. Direct Claude Code to read the relevant document
-2. Tell it which section to focus on
-3. Claude Code reviews the task list and reports what's done versus remaining
-4. You confirm the starting point and direct it to proceed
+2. If iterating on previously implemented work, also load the corresponding Implementation Guide
+3. Tell it which section to focus on
+4. Claude Code reviews the task list and reports what's done versus remaining
+5. You confirm the starting point and direct it to proceed
 
-This prevents Claude Code from losing track of where it is in a larger implementation effort.
+This prevents Claude Code from losing track of where it is in a larger implementation effort. The Implementation Guide is especially important for iteration sessions — it tells Claude Code what's already built so it doesn't re-derive or contradict existing implementation.
 
 ### 4.4 Technical Decision Capture
 
