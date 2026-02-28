@@ -5,13 +5,13 @@
 **Version:** 5.0
 **Purpose:** This guide defines the standard methodology for developing large software projects using Claude.ai for product requirements and design, and Claude Code for implementation. It establishes document types, templates, workflows, and rationale for each decision.
 
-> **V5.0 (2026-02-28):** Consolidated methodology into a single canonical document. Merged Implementation Guide additions (V3) with Functional Area PRD, Template Registry, and entity vs. functional area framework additions (V3–V4). Renumbered sections for consistency.
+> **V5.0 (2026-02-28):** Consolidated methodology into a single canonical document. Merged Implementation Guide additions (V3) with Functional Area PRD, Template Registry, and entity vs. functional area framework additions (V3–V4). Added Glossary as a recognized product-level document type (Section 3.5). Renumbered sections for consistency.
 
 > **V4.0 (2026-02-23):** Added Template Registry (Section 3) listing all template files. Added guidance on handling system administration and entity vs. functional area decisions (Section 5.7).
 
-> **V3.0 (2026-02-23 / 2026-02-27):** Added Functional Area PRD as a new document type (Section 2.4, 3.10) for cross-cutting functionality that doesn't center on a data entity. Separately, added Implementation Guide as a new document type — a 1:1 companion for every PRD/TDD that Claude Code works from (Sections 2.1–2.3, 3.11). Extended the implementation workflow from Plan-Execute-Verify-Test to Plan-Execute-Verify-Test-Document (Section 4.2). Added template file `template-implementation-guide.md`.
+> **V3.0 (2026-02-23 / 2026-02-27):** Added Functional Area PRD as a new document type (Section 2.4, 3.11) for cross-cutting functionality that doesn't center on a data entity. Separately, added Implementation Guide as a new document type — a 1:1 companion for every PRD/TDD that Claude Code works from (Sections 2.1–2.3, 3.12). Extended the implementation workflow from Plan-Execute-Verify-Test to Plan-Execute-Verify-Test-Document (Section 4.2). Added template file `template-implementation-guide.md`.
 
-> **V2.0 (2026-02-23):** Added Key Processes as a PRD component (Section 3.5, 3.8). Added field-level metadata requirements — Editable, Sortable, Filterable — for Entity Base PRDs (Section 5.6). Expanded TDD methodology to describe the living document approach where Claude Code writes implementation decisions back into TDDs (Sections 3.2, 3.7, 4.4). Added the † caching convention for subquery-backed sortable fields.
+> **V2.0 (2026-02-23):** Added Key Processes as a PRD component (Section 3.6, 3.9). Added field-level metadata requirements — Editable, Sortable, Filterable — for Entity Base PRDs (Section 5.6). Expanded TDD methodology to describe the living document approach where Claude Code writes implementation decisions back into TDDs (Sections 3.2, 3.8, 4.4). Added the † caching convention for subquery-backed sortable fields.
 
 ---
 
@@ -56,6 +56,7 @@ These documents describe the entire product and apply globally.
 | Product TDD | Global technology and deployment decisions | Technology stack, database choices, API patterns, design principles, deployment infrastructure, with rationale. The foundation that all entity and action TDDs inherit from. |
 | GUI Standards | Reusable UI patterns and conventions | Design philosophy, color system, typography, spacing, component patterns, layout conventions, interaction behaviors, data display conventions |
 | PRD Index | Document registry and navigation | Hierarchical status of all documents, retired document history, workflow notes |
+| Glossary | Single authoritative source of terminology | Flat alphabetical term list with definitions and source PRD references. All PRDs reference this document rather than maintaining independent term definitions. |
 | Implementation Guides | What Claude Code actually built for each product-level document | Files created/modified, requirement-to-code mapping, deviations and rationale, edge cases discovered, integration points, technical debt |
 
 ### 2.2 Entity Level
@@ -122,6 +123,7 @@ All templates are stored in `Templates/`. This is the complete list:
 | `template-product-tdd.md` | Product TDD | Product |
 | `template-gui-standards.md` | GUI Standards | Product |
 | `template-prd-index.md` | PRD Index | Product |
+| *(no template)* | Glossary | Product |
 | `template-entity-base-prd.md` | Entity Base PRD | Entity |
 | `template-entity-ui-prd.md` | Entity UI PRD | Entity |
 | `template-tdd.md` | Entity TDD / Action TDD | Entity or Action |
@@ -173,7 +175,17 @@ The PRD Index is the navigation hub for the entire document set. It is the first
 
 **Key principle:** The index is lean. It tracks document status and provides navigation. Cross-PRD decisions belong in TDDs. Priority sequencing and work tracking belong in your project management tool.
 
-### 3.5 Entity Base PRD
+### 3.5 Glossary
+
+The Glossary is the single authoritative source of terminology for the product. All PRDs reference this document for term definitions rather than maintaining independent glossary sections that drift out of sync.
+
+**When to create:** Early in the project, alongside the first Entity Base PRDs. Updated whenever a new PRD introduces terminology or when existing terms are refined.
+
+**Key principle:** The glossary uses a flat alphabetical table with three columns: Term, Definition, and Source PRD(s). The Source PRD column traces each term back to the document where it is defined in detail, creating a two-way navigation path — PRDs reference the glossary for definitions, and the glossary references PRDs for full context. No template is needed; the structure is a simple markdown table.
+
+**Why this matters for Claude Code:** Without a shared glossary, Claude Code may use inconsistent terminology across implementation — calling the same concept by different names in different files, or misunderstanding a domain term that has a specific meaning in your product. When the glossary is loaded as context, Claude Code uses your exact terms in code, comments, UI labels, and documentation.
+
+### 3.6 Entity Base PRD
 
 **Template file:** `template-entity-base-prd.md`
 
@@ -193,7 +205,7 @@ The Entity Base PRD is the complete map of a single entity. It defines what the 
 
 These are product decisions, not technical decisions. The PRD declares the intended behavior; the TDD documents how to achieve it performantly.
 
-### 3.6 Entity UI PRD
+### 3.7 Entity UI PRD
 
 **Template file:** `template-entity-ui-prd.md`
 
@@ -203,7 +215,7 @@ The Entity UI PRD describes the standard screens and navigation flows for an ent
 
 **Key principle:** Organized by screen, not by feature. Each screen section contains the layout description, interaction behaviors, and associated task lists and test plans. References the GUI Standards for component patterns but does not duplicate them. The level of UI detail is the author's choice — from a sentence for trivial screens to wireframes for critical layouts.
 
-### 3.7 Entity TDD
+### 3.8 Entity TDD
 
 **Template file:** `template-entity-tdd.md` (uses the same template as Action TDD)
 
@@ -223,7 +235,7 @@ The result is a TDD that starts lean (only your architectural decisions) and gro
 
 **Placeholder section:** The Entity TDD should end with a section titled "Decisions to Be Added by Claude Code" that lists the areas where Claude Code will likely need to make decisions. This serves as a roadmap and a reminder to document those decisions when they're made.
 
-### 3.8 Action Sub-PRD
+### 3.9 Action Sub-PRD
 
 **Template file:** `template-action-sub-prd.md`
 
@@ -235,7 +247,7 @@ The Action Sub-PRD is the document Claude Code works from most directly. It cont
 
 **Key Processes in Action Sub-PRDs:** Complex actions define their own Key Processes using the same KP-ID pattern (e.g., KP-MERGE-01). These describe the end-to-end user journeys specific to that action. Functional sections within the Sub-PRD reference which Key Processes they support, creating the same two-way linkage as in the Entity Base PRD. This ensures Claude Code understands not just what to build, but how the pieces fit into complete user experiences.
 
-### 3.9 Action TDD
+### 3.10 Action TDD
 
 **Template file:** `template-action-tdd.md` (uses the same template as Entity TDD)
 
@@ -245,7 +257,7 @@ Action TDDs are optional. They capture technical decisions specific to an action
 
 **TDD hierarchy:** When Claude Code works on an action, it reads the Product TDD (platform defaults), the Entity TDD (entity-specific decisions), and the Action TDD (action-specific decisions), in that order. Each level overrides the one above for its specific scope.
 
-### 3.10 Functional Area PRD
+### 3.11 Functional Area PRD
 
 **Template file:** `template-functional-area-prd.md`
 
@@ -269,7 +281,7 @@ The Functional Area PRD describes a cross-cutting capability that doesn't center
 
 **Sub-PRDs and TDDs:** Functional areas use the same Action Sub-PRD and TDD templates as entities. A complex admin action (like GDPR data purge) gets its own Sub-PRD following the standard template. A functional area TDD follows the same living document approach as an entity TDD.
 
-### 3.11 Implementation Guide
+### 3.12 Implementation Guide
 
 **Template file:** `template-implementation-guide.md`
 
@@ -325,7 +337,7 @@ When you direct Claude Code to implement a section of a PRD, the workflow follow
 
 **Test.** Claude Code generates a test plan for the completed section. You review and approve the test plan before it's added to the document. Claude Code then runs the tests and reports results.
 
-**Document.** Claude Code writes or updates the Implementation Guide for the document it worked from (Section 3.11). This captures what was actually built — files created, requirement-to-code mapping, deviations from the PRD, edge cases discovered, integration points, and any technical debt introduced. You review and approve the Implementation Guide before the cycle is complete.
+**Document.** Claude Code writes or updates the Implementation Guide for the document it worked from (Section 3.12). This captures what was actually built — files created, requirement-to-code mapping, deviations from the PRD, edge cases discovered, integration points, and any technical debt introduced. You review and approve the Implementation Guide before the cycle is complete.
 
 The Document stage is not optional. Without it, the next Claude Code session working on this feature starts from a knowledge deficit — it knows what was intended (PRD) and what decisions were made (TDD), but not what actually exists in the codebase. The Implementation Guide closes that gap.
 

@@ -1,6 +1,135 @@
 # Project Setup
 
-Getting Claude Code productive on your codebase starts with configuration. A well-configured project means Claude understands your conventions, knows how to build and test, and avoids wasting time on irrelevant files. This guide covers the setup that matters most: CLAUDE.md files, the .claude/ directory, MCP servers, permission modes, and .claudeignore.
+This methodology uses two tools at different phases: **Claude.ai** for requirements development and design, and **Claude Code** for implementation. Each needs its own configuration. Getting both set up correctly means Claude understands your methodology, your conventions, and your codebase — and doesn't lose context between sessions or tools.
+
+This guide covers Claude.ai project configuration first (since requirements work precedes implementation), then Claude Code configuration: CLAUDE.md files, the .claude/ directory, MCP servers, permission modes, and .claudeignore.
+
+---
+
+## Configuring Claude.ai for PRD Development
+
+Claude.ai is where all requirements thinking happens — creating PRDs, TDDs, decomposing entities, refining action catalogs, and reviewing Implementation Guides. A well-configured Claude.ai Project ensures that every conversation starts with the right context and follows the methodology consistently.
+
+### Create a Dedicated Project
+
+Create a Claude.ai Project for your product's requirements work. This gives you a persistent workspace where project instructions, uploaded knowledge files, and conversation history are scoped to your product. All PRD development conversations should happen within this project rather than in general Claude.ai conversations.
+
+### Repository Access
+
+Claude.ai can clone and interact with your Git repository directly during conversations, eliminating the manual cycle of downloading files, editing them, and re-uploading. This is especially valuable for PRD development, where you're frequently reading existing documents and producing updated versions.
+
+**Add the repo URL to Project Instructions.** Include a line like `GitHub repository: https://github.com/username/project-name` so Claude.ai always knows where to find your documents. For public repositories, this is all that's needed — Claude.ai can clone the repo at the start of any session.
+
+**For private repositories, provide a Personal Access Token (PAT).** Claude.ai cannot authenticate to private repos without a token. You have two options:
+
+- **Paste the PAT at the start of each session.** More secure — the token doesn't persist in your project configuration — but requires you to provide it every time. Claude.ai will configure Git authentication for the duration of that session.
+- **Include the PAT in Project Instructions.** More convenient — Claude.ai can access the repo in every conversation without prompting. But the PAT lives in your project's system prompt. If you choose this approach, use a fine-grained token scoped to the specific repository with minimal permissions (Contents: Read and write).
+
+To create a GitHub PAT: click your profile photo (top right) → Settings → Developer settings (bottom of the left sidebar) → Personal access tokens → Fine-grained tokens. Scope it to your project repository with Contents read/write permission.
+
+**The recommended workflow:** Claude.ai pulls from the repo to read current documents, works on updates in the conversation, and pushes finalized changes back to the repo when you approve. This keeps Git as the single source of truth and avoids version drift between the repo and uploaded project knowledge files.
+
+### Project Instructions (System Prompt)
+
+The Project Instructions field is always in context — every message Claude.ai reads includes these instructions. Keep them concise and directive. Their job is to define Claude.ai's role and working rules, not to repeat the methodology guide.
+
+**Example Project Instructions:**
+
+```
+You are a product requirements analyst working on [Product Name].
+
+## Your Role
+- Help the product owner develop, decompose, and refine product requirements
+- Create and update documents following the PRD Methodology Guide (uploaded to project knowledge)
+- Always use the appropriate template from project knowledge when creating new documents
+
+## Working Rules
+- Never mix product requirements (what) with technical decisions (how) in the same document
+- When creating a new document, identify the correct document type (Entity Base PRD, Action Sub-PRD, TDD, Functional Area PRD, etc.) and use its template
+- Maintain task list IDs using the entity prefix convention (e.g., CONT-01, COMP-01)
+- When a field is added to an Entity Base PRD, always specify Editable, Sortable, and Filterable metadata
+- Mark subquery-backed sortable fields with † and note the TDD caching requirement
+- When an action is too complex for the action catalog, recommend creating a Sub-PRD
+- Preserve existing document content when making updates — make surgical edits, not rewrites
+- Use terminology from the glossary consistently; when introducing a new term, add it to the glossary
+- Track version numbers in all documents and update the PRD Index after every session
+
+## Key References in Project Knowledge
+- prd-methodology-guide.md — the methodology (document types, hierarchy, workflows, conventions)
+- template-*.md files — templates for each document type
+- glossary.md — authoritative term definitions; use these terms consistently in all documents
+- [product]-prd-index.md — current document registry and status (upload when available)
+
+## Repository
+- GitHub repository: https://github.com/[username]/[project-name]
+- PRD documents are in the PRDs/ directory; templates are in PRDs/Templates/
+```
+
+Adapt this to your product. The `[Product Name]` and entity prefixes should reflect your actual project. Add product-specific rules as you discover recurring issues — for example, if Claude.ai keeps making UI PRD decisions that belong in the GUI Standards, add a rule about that boundary.
+
+**Project Instructions vs. User Preferences:** Project Instructions should contain rules specific to the methodology and product — things that would apply to anyone working on this project. Personal behavioral preferences — communication style, formatting rules, interaction patterns (e.g., "never use the popup menu widget," "always ask clarifying questions before answering") — belong in Claude.ai's User Preferences (Settings > Profile), where they apply across all your conversations regardless of project. Don't clutter Project Instructions with personal preferences that aren't project-specific.
+
+### Project Knowledge (Uploaded Files)
+
+Project knowledge files are available to Claude.ai in every conversation within the project. Upload these files as your methodology foundation:
+
+**Always upload:**
+- `prd-methodology-guide.md` — the complete methodology reference. Claude.ai uses this to understand document types, hierarchy, naming conventions, and workflows.
+- All `template-*.md` files — the templates for every document type. When you ask Claude.ai to create a new Entity Base PRD or Action Sub-PRD, it should work from the actual template rather than improvising a structure.
+- Your product glossary — the single authoritative source of terminology. Upload this so Claude.ai uses your exact terms when creating and updating documents, rather than inventing its own names for concepts. Without it, terminology drifts across PRDs and eventually into code.
+
+**Upload as you go:**
+- Your PRD Index — once it exists, keep it updated in project knowledge so Claude.ai can reference the current state of all documents.
+- Entity Base PRDs and TDDs relevant to the current phase of work. When decomposing the Company entity, upload the Company Entity Base PRD and its TDD so Claude.ai has context. You don't need every document uploaded at once — scope it to what's active.
+- GUI Standards — upload when working on UI PRDs so Claude.ai can reference component patterns and conventions.
+- Implementation Guides — upload when iterating on previously built features so Claude.ai understands what was actually implemented.
+
+Re-upload the glossary whenever new terms are added. It grows with every PRD — each new entity, action, and UI concept introduces terminology that should be captured centrally.
+
+**Don't upload:**
+- Source code files — those belong in Claude Code's context, not Claude.ai's.
+- Documents you're not actively working on — unnecessary files dilute the knowledge base and can cause Claude.ai to reference stale context.
+
+### Keeping Project Knowledge Current
+
+The uploaded files in project knowledge are static snapshots. When you update a document (version a methodology guide, revise a PRD, update the index), you must re-upload the updated file to project knowledge. The canonical versions of your documents should live in your Git repository; the project knowledge copies are deployed snapshots for Claude.ai's use.
+
+If you've configured repository access (see above), this sync burden is reduced — Claude.ai can pull the latest documents directly from Git at the start of each session. Project knowledge uploads are still useful for the methodology guide and templates (which Claude.ai benefits from having always available without a fetch step), but active PRDs and TDDs can be read from the repo on demand.
+
+If not using Git integration, establish a habit: after any session that produces updated documents, push to Git first (source of truth), then re-upload to project knowledge. This prevents drift between what's in the repo and what Claude.ai sees.
+
+### Recommended Claude.ai Settings
+
+These settings affect how Claude.ai behaves in your project conversations:
+
+- **Memory (Search and reference past chats)** — Enable. This allows Claude.ai to recall context from previous PRD sessions within the project, reducing the need to re-explain decisions.
+- **Generate memory from chat history** — Enable. This builds Claude.ai's awareness of your product over time — entity names, design patterns you've established, recurring preferences.
+- **Artifacts** — Enable. Useful for reviewing document drafts inline before committing to final versions.
+- **Web Search** — Enable selectively. Useful when researching competitive products or technical approaches during PRD development, but not needed for routine document work.
+- **Code Execution and File Creation** — Enable if you want Claude.ai to produce downloadable document files. Disable if you prefer to copy content from the conversation directly.
+
+### Session Workflow
+
+At the start of each Claude.ai PRD session:
+
+1. Open the project (not a general conversation)
+2. If using Git integration, have Claude.ai pull the latest from the repository
+3. State the goal: "We're decomposing the Company entity today" or "I need to create an Action Sub-PRD for email import"
+4. Reference the PRD Index if one exists: "Check the PRD Index for current status"
+5. Work iteratively — review Claude.ai's output, refine, and approve before moving to the next document
+
+At the end of each session:
+
+1. Review all produced or modified documents
+2. Push finalized documents to Git (either have Claude.ai push directly, or push manually)
+3. If not using Git integration, re-upload any changed documents to project knowledge
+4. Update the PRD Index to reflect what was accomplished
+
+---
+
+## Configuring Claude Code for Implementation
+
+Getting Claude Code productive on your codebase starts with configuration. A well-configured project means Claude Code understands your conventions, knows how to build and test, and avoids wasting time on irrelevant files. This section covers the setup that matters most: CLAUDE.md files, the .claude/ directory, MCP servers, permission modes, and .claudeignore.
 
 ## Writing an Effective CLAUDE.md
 
@@ -301,6 +430,7 @@ This keeps Claude focused on the code that matters and prevents it from wasting 
 
 ## See Also
 
+- [PRD Methodology Guide](../prd-methodology-guide.md) — the complete methodology for document types, hierarchy, and workflows
 - [Context Management](02-context-management.md) — manage the context window so Claude stays effective on large codebases
 - [Team Workflows](09-team-workflows.md) — share Claude Code configuration across a team
 - [CI/CD and Automation](08-cicd-and-automation.md) — use Claude Code in headless pipelines and automated workflows
