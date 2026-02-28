@@ -2,7 +2,7 @@
 
 This methodology uses two tools at different phases: **Claude.ai** for requirements development and design, and **Claude Code** for implementation. Each needs its own configuration. Getting both set up correctly means Claude understands your methodology, your conventions, and your codebase — and doesn't lose context between sessions or tools.
 
-This guide covers Claude.ai project configuration first (since requirements work precedes implementation), then Claude Code configuration: CLAUDE.md files, the .claude/ directory, MCP servers, permission modes, and .claudeignore.
+This guide covers Claude.ai project configuration first (since requirements work precedes implementation), then Claude Code configuration: CLAUDE.md files, the .claude/ directory, skills, MCP servers, permission modes, and .claudeignore.
 
 ---
 
@@ -74,13 +74,11 @@ Adapt this to your product. The `[Product Name]` and entity prefixes should refl
 Project knowledge files are available to Claude.ai in every conversation within the project. Upload these files as your methodology foundation:
 
 **Always upload:**
-
 - `prd-methodology-guide.md` — the complete methodology reference. Claude.ai uses this to understand document types, hierarchy, naming conventions, and workflows.
 - All `template-*.md` files — the templates for every document type. When you ask Claude.ai to create a new Entity Base PRD or Action Sub-PRD, it should work from the actual template rather than improvising a structure.
 - Your product glossary — the single authoritative source of terminology. Upload this so Claude.ai uses your exact terms when creating and updating documents, rather than inventing its own names for concepts. Without it, terminology drifts across PRDs and eventually into code.
 
 **Upload as you go:**
-
 - Your PRD Index — once it exists, keep it updated in project knowledge so Claude.ai can reference the current state of all documents.
 - Entity Base PRDs and TDDs relevant to the current phase of work. When decomposing the Company entity, upload the Company Entity Base PRD and its TDD so Claude.ai has context. You don't need every document uploaded at once — scope it to what's active.
 - GUI Standards — upload when working on UI PRDs so Claude.ai can reference component patterns and conventions.
@@ -89,7 +87,6 @@ Project knowledge files are available to Claude.ai in every conversation within 
 Re-upload the glossary whenever new terms are added. It grows with every PRD — each new entity, action, and UI concept introduces terminology that should be captured centrally.
 
 **Don't upload:**
-
 - Source code files — those belong in Claude Code's context, not Claude.ai's.
 - Documents you're not actively working on — unnecessary files dilute the knowledge base and can cause Claude.ai to reference stale context.
 
@@ -132,7 +129,7 @@ At the end of each session:
 
 ## Configuring Claude Code for Implementation
 
-Getting Claude Code productive on your codebase starts with configuration. A well-configured project means Claude Code understands your conventions, knows how to build and test, and avoids wasting time on irrelevant files. This section covers the setup that matters most: CLAUDE.md files, the .claude/ directory, MCP servers, permission modes, and .claudeignore.
+Getting Claude Code productive on your codebase starts with configuration. A well-configured project means Claude Code understands your conventions, knows how to build and test, and avoids wasting time on irrelevant files. This section covers the setup that matters most: CLAUDE.md files, the .claude/ directory, skills, MCP servers, permission modes, and .claudeignore.
 
 ## Writing an Effective CLAUDE.md
 
@@ -144,7 +141,7 @@ The CLAUDE.md file is the single most impactful thing you can configure. Claude 
 - **Project conventions** — naming patterns, file organization rules, import ordering, error handling approaches
 - **Architecture overview** — just enough to understand the system's shape (2-5 sentences, not a design doc)
 - **Key file paths** — entry points, config files, shared utilities, database schemas
-- **Feature specs location** — where PRDs and design docs live (e.g., `docs/specs/`) so Claude can read them when implementing features
+- **Feature specs location** — where PRDs, TDDs, Implementation Guides, and the glossary live so Claude can read them when implementing features (see "Connecting CLAUDE.md to the PRD Methodology" below for detailed guidance)
 - **Common gotchas** — things that trip up newcomers ("always run migrations before tests", "the legacy API uses a different auth scheme")
 
 ### What to Skip
@@ -203,6 +200,66 @@ and acceptance criteria for a feature.
 - CI runs `pnpm test -- --ci --coverage` — tests must pass with coverage thresholds
 ```
 
+### Connecting CLAUDE.md to the PRD Methodology
+
+The example above shows a generic CLAUDE.md. If you're following the PRD methodology, the CLAUDE.md is the bridge between the documents Claude.ai produced and the codebase Claude Code works on. It needs to tell Claude Code where to find requirements documents, what the document structure means, and what rules to follow during implementation.
+
+Add a section like this to your CLAUDE.md:
+
+```markdown
+## PRD Methodology
+
+This project uses structured PRD methodology. All requirements and design
+documents live in PRDs/. Read the relevant documents before implementing
+any feature work.
+
+### Document Locations
+- PRDs/ — all product requirements documents, TDDs, and implementation guides
+- PRDs/Templates/ — templates for each document type (do not modify)
+- PRDs/glossary.md — authoritative terminology; use these terms in code,
+  comments, UI labels, and documentation
+- PRDs/prd-index.md — master document registry; check this to find the
+  right document for any feature
+- PRDs/gui-standards.md — UI component patterns, spacing, typography, and
+  interaction conventions
+
+### Document Types
+Each entity (Contact, Company, Communication, etc.) has:
+- Entity Base PRD — what the entity is, its fields, relationships, lifecycle,
+  and action catalog
+- Entity TDD — technical decisions for how to build it
+- Action Sub-PRDs — detailed requirements for complex actions
+- Implementation Guides (*-impl.md) — record of what was actually built
+
+### Implementation Rules
+- Follow the Plan-Execute-Verify-Test-Document cycle for all feature work
+- Do not write code until the implementation plan is approved
+- Do not deviate from PRD requirements without discussion — if a requirement
+  is impractical, flag it and propose alternatives
+- Field editability is explicit: only make fields editable if the PRD says
+  Direct or Override. Via [sub-entity], Computed, and System fields are
+  never directly editable.
+- Use the glossary terms consistently in code identifiers, comments, and UI text
+- Update task list checkboxes as you complete each item
+- Record technical decisions in the appropriate TDD (Product, Entity, or Action)
+- Write or update the Implementation Guide after completing work
+
+### Design Principles
+- [Add your Product TDD design principles here, e.g.:]
+- Display speed is paramount — denormalize for read speed
+- Idempotent writes — all sync uses UPSERT
+- Editability is explicit — never make fields editable unless the PRD says so
+```
+
+**What goes in CLAUDE.md vs. what stays in the prompt:** The CLAUDE.md establishes the permanent rules and file locations. The per-session prompt templates (Section 4.6 of the methodology guide) tell Claude Code which specific documents to read and which section to focus on. Think of CLAUDE.md as the standing orders and the session prompt as the mission briefing.
+
+**Promoting stable documents beyond CLAUDE.md:** If your Product TDD and GUI Standards are stable (not changing session to session), you have two options for making them always available to Claude Code without requiring a session prompt to load them:
+
+1. **Extract key rules into CLAUDE.md** — put the most critical constraints (design principles, editability rules) directly in CLAUDE.md so they're always in context. This is best for a small number of non-negotiable rules.
+2. **Promote full documents to skills** — package the complete document as a Claude Code skill in `.claude/skills/`. Claude Code loads skills on-demand when they're relevant to the current task, so they don't consume context window until needed. This is better for larger documents like GUI Standards or the glossary. See "Skills" below and Section 4.7 of the methodology guide for detailed guidance.
+
+These approaches are complementary: CLAUDE.md carries the rules Claude Code must never forget, skills carry the detailed reference it needs when working in a specific area.
+
 ### CLAUDE.md Hierarchy
 
 Claude loads CLAUDE.md files from multiple locations, and they stack:
@@ -229,7 +286,7 @@ Each nested file should contain only what is specific to that subtree. Do not re
 
 ## The .claude/ Directory
 
-The `.claude/` directory holds project-level Claude Code configuration that goes beyond the CLAUDE.md file.
+The `.claude/` directory holds project-level Claude Code configuration that goes beyond the CLAUDE.md file. It contains settings, custom slash commands, memory, and skills.
 
 ### settings.json
 
@@ -276,6 +333,8 @@ The user's prompt will describe what the endpoint should do: $ARGUMENTS
 
 The team invokes this with `/project:add-api-endpoint GET /users/:id/preferences — returns user notification and display preferences`. The `$ARGUMENTS` placeholder is replaced with whatever the user types after the command name.
 
+**Methodology-specific slash commands:** If you're following the PRD methodology, Section 4.6 of the [PRD Methodology Guide](../prd-methodology-guide.md) provides three slash commands tailored to the implementation workflow: `implement-section` (reads PRD/TDD, proposes plan, implements), `write-impl-guide` (creates or updates an Implementation Guide), and `tdd-writeback` (captures technical decisions in the appropriate TDD).
+
 **Example: `.claude/commands/debug-test.md`**
 
 ```markdown
@@ -291,6 +350,56 @@ Help debug a failing test.
 ### Memory Files
 
 Claude Code also uses `.claude/` to store conversation memory when you ask it to "remember" something. These are managed automatically — you generally do not need to edit them by hand, but it is useful to know they exist. If Claude starts behaving oddly based on stale memory, check `.claude/` for outdated memory entries.
+
+### Skills
+
+Skills are packaged capabilities that Claude Code discovers and loads automatically when they're relevant to the current task. Unlike CLAUDE.md (which is always loaded), skills are loaded on-demand based on their description matching the user's request. This makes them ideal for reference material that's needed sometimes but not always.
+
+Skills live in `.claude/skills/` (project-level, shared via git) or `~/.claude/skills/` (personal, across all projects). Each skill is a directory containing a `SKILL.md` file with YAML frontmatter and markdown content, plus optional supporting files:
+
+```
+.claude/skills/
+  gui-standards/
+    SKILL.md                    # summary + key rules (loaded first)
+    gui-standards-reference.md  # full spec (loaded on demand)
+  design-principles/
+    SKILL.md                    # extracted from Product TDD
+  project-glossary/
+    SKILL.md                    # usage instructions
+    glossary.md                 # full term list
+  prd-templates/
+    SKILL.md                    # template directory
+    template-entity-base-prd.md # individual templates
+    template-tdd.md
+    ...
+```
+
+The `SKILL.md` file has two parts: YAML frontmatter that tells Claude Code when to use the skill, and markdown content with the instructions Claude Code follows when the skill is activated:
+
+```yaml
+---
+name: gui-standards
+description: UI design system and component patterns. Use when implementing
+  any user interface — list views, detail views, forms, modals, navigation.
+---
+
+# GUI Standards
+
+## Key Rules (always apply)
+- [Your key UI rules here]
+
+For the complete specification, see [gui-standards-reference.md](gui-standards-reference.md).
+```
+
+The `description` field is critical — Claude Code uses it to decide whether to load the skill. Include both what the skill does and specific trigger words that would appear in relevant prompts (e.g., "list views, detail views, forms, modals").
+
+**Reference files via symlinks:** Skills often reference documents that already exist in your project (GUI Standards, glossary, templates). Rather than copying these files into the skill directory (creating a maintenance problem), use symbolic links: `ln -s ../../../PRDs/glossary.md glossary.md`. Git preserves symlinks, so the skill always points to the canonical source.
+
+**Progressive disclosure:** Claude Code reads `SKILL.md` first. If it needs more detail, it reads the referenced files. Keep `SKILL.md` focused on the key rules and summary — put the full specification in separate files that are loaded only when needed.
+
+**Project vs. personal skills:** Project skills in `.claude/skills/` are checked into git and automatically available to all team members when they pull. Personal skills in `~/.claude/skills/` are available across all your projects but not shared. Use project skills for methodology documents that the whole team needs.
+
+For detailed guidance on which methodology documents to promote to skills, how to structure them, and activation reliability, see Section 4.7 of the [PRD Methodology Guide](../prd-methodology-guide.md). Starter templates for four methodology skills are provided in `Templates/skill-templates/`.
 
 ## MCP Server Configuration
 
@@ -433,7 +542,7 @@ This keeps Claude focused on the code that matters and prevents it from wasting 
 
 ## See Also
 
-- [PRD Methodology Guide](../prd-methodology-guide.md) — the complete methodology for document types, hierarchy, and workflows
+- [PRD Methodology Guide](../prd-methodology-guide.md) — the complete methodology for document types, hierarchy, workflows, prompt templates (Section 4.6), and skills integration (Section 4.7)
 - [Context Management](02-context-management.md) — manage the context window so Claude stays effective on large codebases
 - [Team Workflows](09-team-workflows.md) — share Claude Code configuration across a team
 - [CI/CD and Automation](08-cicd-and-automation.md) — use Claude Code in headless pipelines and automated workflows
