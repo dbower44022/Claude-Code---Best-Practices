@@ -74,11 +74,13 @@ Adapt this to your product. The `[Product Name]` and entity prefixes should refl
 Project knowledge files are available to Claude.ai in every conversation within the project. Upload these files as your methodology foundation:
 
 **Always upload:**
+
 - `prd-methodology-guide.md` — the complete methodology reference. Claude.ai uses this to understand document types, hierarchy, naming conventions, and workflows.
 - All `template-*.md` files — the templates for every document type. When you ask Claude.ai to create a new Entity Base PRD or Action Sub-PRD, it should work from the actual template rather than improvising a structure.
 - Your product glossary — the single authoritative source of terminology. Upload this so Claude.ai uses your exact terms when creating and updating documents, rather than inventing its own names for concepts. Without it, terminology drifts across PRDs and eventually into code.
 
 **Upload as you go:**
+
 - Your PRD Index — once it exists, keep it updated in project knowledge so Claude.ai can reference the current state of all documents.
 - Entity Base PRDs and TDDs relevant to the current phase of work. When decomposing the Company entity, upload the Company Entity Base PRD and its TDD so Claude.ai has context. You don't need every document uploaded at once — scope it to what's active.
 - GUI Standards — upload when working on UI PRDs so Claude.ai can reference component patterns and conventions.
@@ -87,6 +89,7 @@ Project knowledge files are available to Claude.ai in every conversation within 
 Re-upload the glossary whenever new terms are added. It grows with every PRD — each new entity, action, and UI concept introduces terminology that should be captured centrally.
 
 **Don't upload:**
+
 - Source code files — those belong in Claude Code's context, not Claude.ai's.
 - Documents you're not actively working on — unnecessary files dilute the knowledge base and can cause Claude.ai to reference stale context.
 
