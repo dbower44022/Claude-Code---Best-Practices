@@ -2,10 +2,14 @@
 
 ## Using Claude.ai and Claude Code for Large Project Development
 
-**Version:** 3.0
+**Version:** 5.0
 **Purpose:** This guide defines the standard methodology for developing large software projects using Claude.ai for product requirements and design, and Claude Code for implementation. It establishes document types, templates, workflows, and rationale for each decision.
 
-> **V3.0 (2026-02-27):** Added Implementation Guide as a new document type — a 1:1 companion for every PRD/TDD that Claude Code works from (Sections 2.1–2.3, 3.10). Extended the implementation workflow from Plan-Execute-Verify-Test to Plan-Execute-Verify-Test-Document (Section 4.2). Added template file `template-implementation-guide.md`.
+> **V5.0 (2026-02-28):** Consolidated methodology into a single canonical document. Merged Implementation Guide additions (V3) with Functional Area PRD, Template Registry, and entity vs. functional area framework additions (V3–V4). Renumbered sections for consistency.
+
+> **V4.0 (2026-02-23):** Added Template Registry (Section 3) listing all template files. Added guidance on handling system administration and entity vs. functional area decisions (Section 5.7).
+
+> **V3.0 (2026-02-23 / 2026-02-27):** Added Functional Area PRD as a new document type (Section 2.4, 3.10) for cross-cutting functionality that doesn't center on a data entity. Separately, added Implementation Guide as a new document type — a 1:1 companion for every PRD/TDD that Claude Code works from (Sections 2.1–2.3, 3.11). Extended the implementation workflow from Plan-Execute-Verify-Test to Plan-Execute-Verify-Test-Document (Section 4.2). Added template file `template-implementation-guide.md`.
 
 > **V2.0 (2026-02-23):** Added Key Processes as a PRD component (Section 3.5, 3.8). Added field-level metadata requirements — Editable, Sortable, Filterable — for Entity Base PRDs (Section 5.6). Expanded TDD methodology to describe the living document approach where Claude Code writes implementation decisions back into TDDs (Sections 3.2, 3.7, 4.4). Added the † caching convention for subquery-backed sortable fields.
 
@@ -75,15 +79,26 @@ These documents describe a single complex action or group of related actions on 
 | Action TDD | Action-specific technical decisions (only if needed) | Decisions with rationale that apply only to this action. Same living document approach — you write initial decisions, Claude Code adds implementation decisions. |
 | Implementation Guides | What Claude Code actually built for each action-level document | 1:1 companion for each Action Sub-PRD and Action TDD. Maps requirements and decisions to codebase reality. |
 
-### 2.4 Cross-Entity Workflows
+### 2.4 Functional Area Level
+
+These documents describe a cross-cutting functional area that doesn't center on a single data entity. Examples: System Administration, Notifications, Audit Logging, Search Infrastructure.
+
+| Document | Purpose | Contains |
+|---|---|---|
+| Functional Area PRD | Complete description of a cross-cutting capability | Scope, actors, capabilities, configuration, key processes, action catalog, cross-cutting concerns, task lists, test plans |
+| Action Sub-PRD | Detailed requirements for a complex action within the area | Same template as entity action sub-PRDs |
+| Functional Area TDD | Area-specific technical decisions (only if needed) | Same living document approach as entity TDDs |
+| Implementation Guides | What Claude Code actually built for each functional-area-level document | 1:1 companion for each Functional Area PRD, Action Sub-PRD, and Functional Area TDD. Maps requirements and decisions to codebase reality. |
+
+### 2.5 Cross-Entity Workflows
 
 If a workflow genuinely spans multiple entities without a natural owner, it follows the same pattern as an entity — base PRD, sub-PRDs, UI PRD, and TDD as needed. In practice, most workflows have a natural owning entity, and the action sub-PRD simply references other entity base PRDs.
 
-### 2.5 Inheritance
+### 2.6 Inheritance
 
 Each level inherits from above. An Action Sub-PRD inherits the product principles, the entity's data model and lifecycle, and any technical decisions from the Product TDD and Entity TDD. The self-containment principle means relevant inherited context is extracted into the document rather than requiring Claude Code to load parent documents.
 
-### 2.6 Implementation Guides
+### 2.7 Implementation Guides
 
 Every document that Claude Code works from — every PRD and every TDD — gets a companion Implementation Guide. This is a strict 1:1 mapping: `contact-entity-base-prd.md` gets `contact-entity-base-prd-impl.md`, `contact-entity-tdd.md` gets `contact-entity-tdd-impl.md`, and so on.
 
@@ -96,6 +111,23 @@ Every document that Claude Code works from — every PRD and every TDD — gets 
 ## 3. Document Templates
 
 Each document type has a defined template. Templates provide structure and consistency but are not rigid — the author decides what level of detail is appropriate for each section. The following sections reference the separate template files.
+
+### Template Registry
+
+All templates are stored in `Templates/`. This is the complete list:
+
+| Template | Document Type | Level |
+|---|---|---|
+| `template-product-prd.md` | Product PRD | Product |
+| `template-product-tdd.md` | Product TDD | Product |
+| `template-gui-standards.md` | GUI Standards | Product |
+| `template-prd-index.md` | PRD Index | Product |
+| `template-entity-base-prd.md` | Entity Base PRD | Entity |
+| `template-entity-ui-prd.md` | Entity UI PRD | Entity |
+| `template-tdd.md` | Entity TDD / Action TDD | Entity or Action |
+| `template-action-sub-prd.md` | Action Sub-PRD | Action |
+| `template-functional-area-prd.md` | Functional Area PRD | Functional Area |
+| `template-implementation-guide.md` | Implementation Guide | All Levels |
 
 ### 3.1 Product PRD
 
@@ -213,7 +245,31 @@ Action TDDs are optional. They capture technical decisions specific to an action
 
 **TDD hierarchy:** When Claude Code works on an action, it reads the Product TDD (platform defaults), the Entity TDD (entity-specific decisions), and the Action TDD (action-specific decisions), in that order. Each level overrides the one above for its specific scope.
 
-### 3.10 Implementation Guide
+### 3.10 Functional Area PRD
+
+**Template file:** `template-functional-area-prd.md`
+
+The Functional Area PRD describes a cross-cutting capability that doesn't center on a single data entity. It governs system-level functionality like administration, notifications, audit logging, or search infrastructure — areas where the requirements span multiple entities or involve configuration and operations rather than entity CRUD.
+
+**When to create:** When a capability needs structured requirements but doesn't fit the Entity Base PRD pattern. The distinguishing characteristic is that the functional area operates *on* entities and system resources rather than *being* an entity itself. For example, System Administration manages users, provider accounts, and settings — but "admin" is not a data entity with its own fields and lifecycle.
+
+**Key principle:** The Functional Area PRD borrows the proven patterns from Entity Base PRDs — Key Processes, action catalog (simple vs. complex), task lists, test plans — but replaces the entity definition and field tables with a scope/capabilities definition and a configuration table. This ensures Claude Code gets the same structured, implementable requirements regardless of whether the work is entity-centric or cross-cutting.
+
+**Structure comparison:**
+
+| Entity Base PRD | Functional Area PRD |
+|---|---|
+| Entity Definition (fields, metadata) | Scope & Boundaries (purpose, actors, boundaries) |
+| Relationships | Related Documents |
+| Lifecycle | Capabilities (what the area provides) |
+| Key Processes | Key Processes (same pattern) |
+| Action Catalog | Action Catalog (same pattern) |
+| Cross-Cutting Concerns | Cross-Cutting Concerns (same pattern) |
+| — | Configuration (settings, parameters, defaults) |
+
+**Sub-PRDs and TDDs:** Functional areas use the same Action Sub-PRD and TDD templates as entities. A complex admin action (like GDPR data purge) gets its own Sub-PRD following the standard template. A functional area TDD follows the same living document approach as an entity TDD.
+
+### 3.11 Implementation Guide
 
 **Template file:** `template-implementation-guide.md`
 
@@ -269,7 +325,7 @@ When you direct Claude Code to implement a section of a PRD, the workflow follow
 
 **Test.** Claude Code generates a test plan for the completed section. You review and approve the test plan before it's added to the document. Claude Code then runs the tests and reports results.
 
-**Document.** Claude Code writes or updates the Implementation Guide for the document it worked from (Section 3.10). This captures what was actually built — files created, requirement-to-code mapping, deviations from the PRD, edge cases discovered, integration points, and any technical debt introduced. You review and approve the Implementation Guide before the cycle is complete.
+**Document.** Claude Code writes or updates the Implementation Guide for the document it worked from (Section 3.11). This captures what was actually built — files created, requirement-to-code mapping, deviations from the PRD, edge cases discovered, integration points, and any technical debt introduced. You review and approve the Implementation Guide before the cycle is complete.
 
 The Document stage is not optional. Without it, the next Claude Code session working on this feature starts from a knowledge deficit — it knows what was intended (PRD) and what decisions were made (TDD), but not what actually exists in the codebase. The Implementation Guide closes that gap.
 
@@ -380,6 +436,33 @@ Every field in an Entity Base PRD's Core Fields table must declare three behavio
 - Claude Code reads both and implements accordingly
 
 Without this convention, Claude Code either makes expensive subquery fields sortable (degrading performance) or silently makes them non-sortable (violating the PRD). The † makes the intent explicit and the responsibility clear.
+
+### 5.7 Entity vs. Functional Area: Where System Admin Functions Belong
+
+System administration is the most common case where functionality doesn't fit neatly into a single entity. The challenge is that admin work touches multiple entities (users, provider accounts, settings) while also including system-level operations (backups, health monitoring, GDPR purge) that don't belong to any entity. Getting the boundary wrong creates either a bloated entity PRD or scattered requirements that Claude Code can't find.
+
+**The decision rule:** If the functionality *is* a data object with its own fields, lifecycle, and CRUD operations, it's an entity. If the functionality *operates on* entities and system resources, it's a functional area. Some things that feel like "admin" are actually entities:
+
+| Looks like admin... | Actually is... | Why |
+|---|---|---|
+| "User management" | User entity + admin actions on it | Users have fields (name, email, role), a lifecycle (invited → active → suspended → deactivated), and CRUD. The data model belongs in a User Entity Base PRD. |
+| "Tenant management" | Customer/Tenant entity + admin actions | Tenants have fields, configuration, and lifecycle. The data model belongs in its own Entity Base PRD. |
+| "Provider account management" | Provider Account entity + admin actions | Provider accounts have fields (email, type, tokens, sync state), a lifecycle (connected → syncing → paused → needs_reauth → disconnected), and CRUD. |
+| "Settings page" | Admin functional area (configuration) | Settings don't have an independent lifecycle — they're configuration knobs. They belong in the Functional Area PRD's Configuration section. |
+| "GDPR purge" | Admin functional area (data operations) | A cross-entity workflow that touches contacts, communications, relationships, and the event store. No single entity owns it. |
+| "System health dashboard" | Admin functional area (monitoring) | Aggregates status from sync, database, and background jobs. Not an entity. |
+
+**The recommended split for system administration:**
+
+1. **Entity Base PRDs** for User, Customer/Tenant, and Provider Account — each defines the data model, fields (with editable/sortable/filterable metadata), relationships, and lifecycle. Simple CRUD actions live in their action catalogs.
+
+2. **System Administration Functional Area PRD** for everything that operates across entities or at the system level — the admin actions performed on those entities (invite user, suspend user, connect account, disconnect account), settings management, data operations, system health monitoring, and onboarding workflows. The Functional Area PRD references the entity PRDs for data model context but owns the administrative actions and processes.
+
+3. **Action Sub-PRDs** for complex admin operations — GDPR data purge, schema migration execution, and similar high-consequence workflows that need detailed requirements, confirmation gates, and audit trails.
+
+**Why this split works:** Claude Code gets clear, focused documents. When building the user profile page, it reads the User Entity Base PRD. When building the admin user management screen, it reads the Admin Functional Area PRD. When building the GDPR purge workflow, it reads the GDPR Sub-PRD. Each document is self-contained for its purpose.
+
+**Generalizing beyond admin:** This same pattern applies to any functional area. Notifications, audit logging, search infrastructure, and reporting are all functional areas that operate across entities. Each gets its own Functional Area PRD when the requirements are substantial enough to warrant it. Small cross-cutting concerns (like "all entities support soft delete") can live in the Product PRD or the relevant Entity Base PRDs without needing a separate document.
 
 ---
 
